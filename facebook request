@@ -1,0 +1,12 @@
+
+https://graph.facebook.com/v2.11/me/messages?access_token=DQVJzeDYzWXpuYnkwaVhIUy1aWml3YU5ueEUzTVBHN2VzdkNkOXZAuN3hzVVpoeUxxRE14ZA3ltUzIzZA3d0aGVvZA0RQRXlRb0VmNEhic2F6VDlBUURXZA1ZAqRWxIV0dEOUdNejUyZA1FUd0RXdXNtVGVuVy13MjBQekpaVEJTd1FZAbEQtQUR3cGp2ZAVVXU2Q1YVVjT3VhcGxfdDRVN0pfc3hKdHF6ajNVRVBFV2xPbGs0aXMwWkhucDR6U2tuMEE5OElGdGJHTGM5a24yeHdJYW5FaAZDZD
+
+{
+  "recipient": {
+    "id": "100028472046250"
+  },
+  "message": {
+    "text": "hello, world!"
+  }
+}
+    
