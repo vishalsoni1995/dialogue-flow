@@ -19,8 +19,13 @@
 
 package io.ionic.starter;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
+
+import org.apache.cordova.*;
+
+import java.util.concurrent.TimeUnit;
 
 import androidx.work.Constraints;
 import androidx.work.ExistingPeriodicWorkPolicy;
@@ -28,19 +33,13 @@ import androidx.work.NetworkType;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
-import org.apache.cordova.*;
-import org.apache.cordova.health.FitWorker;
-
-import java.util.concurrent.TimeUnit;
-
 public class MainActivity extends CordovaActivity
 {
-    public static MainActivity mainActivity;
+
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        mainActivity = this;
 
         // enable Cordova apps to be started in the background
         Bundle extras = getIntent().getExtras();
@@ -51,20 +50,18 @@ public class MainActivity extends CordovaActivity
         // Set by <content src="index.html" /> in config.xml
         loadUrl(launchUrl);
 
-      Constraints constraints = new Constraints.Builder()
+        Constraints constraints = new Constraints.Builder()
         .setRequiredNetworkType(NetworkType.CONNECTED)
         .build();
 
-      String workTag = "SamJob";
-      WorkManager.getInstance().cancelAllWorkByTag(workTag);
-      PeriodicWorkRequest compressionWork =
-        new PeriodicWorkRequest.Builder(SamWorker.class, 15, TimeUnit.MINUTES)
-          .setConstraints(constraints)
-          .addTag(workTag)
-          .build();
-      Log.i(TAG, "Work request id "+  compressionWork.getId().toString());
-      WorkManager.getInstance().enqueueUniquePeriodicWork(workTag, ExistingPeriodicWorkPolicy.REPLACE,compressionWork);
-
-
+        String workTag = "SamJob";
+        WorkManager.getInstance().cancelAllWorkByTag(workTag);
+        PeriodicWorkRequest compressionWork =
+          new PeriodicWorkRequest.Builder(SamWorker.class, 15, TimeUnit.MINUTES)
+            .setConstraints(constraints)
+            .addTag(workTag)
+            .build();
+        Log.i(TAG, "Work request id "+  compressionWork.getId().toString());
+        WorkManager.getInstance().enqueueUniquePeriodicWork(workTag, ExistingPeriodicWorkPolicy.REPLACE,compressionWork);
     }
 }

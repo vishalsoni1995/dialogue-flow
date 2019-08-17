@@ -70,6 +70,9 @@ import java.text.SimpleDateFormat;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import androidx.work.WorkerParameters;
+import io.ionic.starter.SamWorker;
+
 
 public class StepCountReader {
 
@@ -85,9 +88,9 @@ public class StepCountReader {
     private static final String ALIAS_TOTAL_COUNT = "count";
     private static final String ALIAS_DEVICE_UUID = "deviceuuid";
     private static final String ALIAS_BINNING_TIME = "binning_time";
-
+    public static JSONArray stepResult;
     private final HealthDataResolver mResolver;
-    private final Activity currentActivity;
+    private final Context currentActivity;
     static {
         TODAY_START_UTC_TIME = getTodayStartUtcTime();
     }
@@ -104,7 +107,7 @@ public class StepCountReader {
         return today.getTimeInMillis();
     }
 
-    public StepCountReader(HealthDataStore store, Activity activity) {
+    public StepCountReader(HealthDataStore store, Context activity) {
         mResolver = new HealthDataResolver(store, null);
         currentActivity = activity;
     }
@@ -241,79 +244,6 @@ public class StepCountReader {
     }
 
 
-  public JSONArray readStepDailyTrendForBackground(final long startTime,final long endTime, final CallbackContext callbackContext) {
-//      long start = Long.parseLong(Long.toString(startTime));
-//      long end = Long.parseLong(Long.toString(endTime));
-
-    long start = startTime;
-    long end = endTime;
-
-    Filter filter = Filter.and(Filter.greaterThanEquals(PROPERTY_TIME, start),
-      Filter.lessThanEquals(PROPERTY_TIME,end),
-      // filtering source type "combined(-2)"
-      Filter.eq("source_type", -2));
-
-    ReadRequest request = new ReadRequest.Builder()
-      .setDataType(STEP_SUMMARY_DATA_TYPE_NAME)
-      .setSort("day_time", HealthDataResolver.SortOrder.DESC)
-      //.setLocalTimeRange(StepCount.START_TIME,StepCount.TIME_OFFSET,startTime,endTime)
-      .setFilter(filter)
-      .build();
-
-    try {
-      mResolver.read(request).setResultListener(result -> {
-        int totalCount = 0;
-
-        JSONArray stepResponse = new JSONArray();
-        List<StepBinningData> binningDataList = Collections.emptyList();
-        Cursor c = null;
-        try {
-          c = result.getResultCursor();
-          if (c != null) {
-            while(c.moveToNext()) {
-
-              long dayTime = c.getLong(c.getColumnIndex("day_time"));
-              int stepCount = c.getInt(c.getColumnIndex("count"));
-
-
-              SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
-              //Log.d("date", dateFormat.format(dayTime));
-              Log.d("count", "Step Count: " + stepCount);
-              JSONObject daySteps = new JSONObject();
-              daySteps.put("date", dayTime);
-              daySteps.put("stepCount", stepCount);
-              stepResponse.put(daySteps);
-              Log.d("dailysteps", stepResponse.toString());
-            }
-          } else {
-            Log.d("cursor", "The cursor is null.");
-          }
-        }
-        catch(Exception e) {
-          Log.e("message", e.getClass().getName() + " - " + e.getMessage());
-        }
-        finally {
-          if (c != null) {
-            c.close();
-          }
-        }
-        if(callbackContext != null) {
-          callbackContext.success(stepResponse);
-        }
-
-      });
-    } catch (Exception e) {
-      JSONArray stepResponse = new JSONArray();
-      Log.e("StepCounterReader", "Getting daily step trend fails.", e);
-      callbackContext.success(stepResponse);
-    }
-
-    return null;
-  }
-
-
-
-
     private void readStepCountBinning(final long startTime, String deviceUuid) {
 
         Filter filter = Filter.eq(HealthConstants.StepCount.DEVICE_UUID, deviceUuid);
@@ -379,4 +309,73 @@ public class StepCountReader {
             this.count = count;
         }
     }
+
+  public void readStepDailyTrendForBackground(final long startTime,final long endTime, final CallbackContext callbackContext) {
+
+    long start = startTime;
+    long end = endTime;
+
+    Filter filter = Filter.and(Filter.greaterThanEquals(PROPERTY_TIME, start),
+      Filter.lessThanEquals(PROPERTY_TIME,end),
+      // filtering source type "combined(-2)"
+      Filter.eq("source_type", -2));
+
+    ReadRequest request = new ReadRequest.Builder()
+      .setDataType(STEP_SUMMARY_DATA_TYPE_NAME)
+      .setSort("day_time", HealthDataResolver.SortOrder.DESC)
+      //.setLocalTimeRange(StepCount.START_TIME,StepCount.TIME_OFFSET,startTime,endTime)
+      .setFilter(filter)
+      .build();
+
+    try {
+      mResolver.read(request).setResultListener(result -> {
+        int totalCount = 0;
+
+        JSONArray stepResponse = new JSONArray();
+        List<StepBinningData> binningDataList = Collections.emptyList();
+        Cursor c = null;
+        try {
+          c = result.getResultCursor();
+          if (c != null) {
+            while(c.moveToNext()) {
+
+              long dayTime = c.getLong(c.getColumnIndex("day_time"));
+              int stepCount = c.getInt(c.getColumnIndex("count"));
+
+
+              SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
+              //Log.d("date", dateFormat.format(dayTime));
+              Log.d("count", "Step Count: " + stepCount);
+              JSONObject daySteps = new JSONObject();
+              daySteps.put("date", dayTime);
+              daySteps.put("stepCount", stepCount);
+              stepResponse.put(daySteps);
+            }
+            Log.d("dailysteps", stepResponse.toString());
+            setResult(stepResponse);
+          } else {
+            Log.d("cursor", "The cursor is null.");
+          }
+        }
+        catch(Exception e) {
+          Log.e("message", e.getClass().getName() + " - " + e.getMessage());
+        }
+        finally {
+          if (c != null) {
+            c.close();
+          }
+        }
+
+      });
+    } catch (Exception e) {
+      JSONArray stepResponse = new JSONArray();
+      Log.e("StepCounterReader", "Getting daily step trend fails.", e);
+      callbackContext.success(stepResponse);
+    }
+  }
+
+  public void setResult(JSONArray result){
+    SamWorker.showResult(result);
+  }
+
 }

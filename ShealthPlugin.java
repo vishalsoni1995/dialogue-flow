@@ -69,7 +69,7 @@ public class ShealthPlugin extends CordovaPlugin {
     private HealthDataStore mStore;
     private StepCountReader mReporter;
     private long mCurrentStartTime;
-    private Activity actContext;
+    private Context actContext;
     private Context appContext;
     private CallbackContext connectCallbackContext;
     private HashMap<String, TimeUnit> TimeUnitLookup;
@@ -104,30 +104,6 @@ public class ShealthPlugin extends CordovaPlugin {
 
         cordova.setActivityResultCallback(this);
     }
-
-  public void initializeForBackground(Context context, Context activity) {
-
-    actContext = (Activity) activity;
-    appContext = context;
-
-    // Get the start time of today in local
-    mCurrentStartTime = StepCountReader.TODAY_START_UTC_TIME;
-    HealthDataService healthDataService = new HealthDataService();
-    try {
-      healthDataService.initialize(actContext);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    // Create a HealthDataStore instance and set its listener
-    mStore = new HealthDataStore(actContext, mConnectionListener);
-
-    // // Request the connection to the health data store
-    mStore.connectService();
-    mReporter = new StepCountReader(mStore, actContext);
-
-//    cordova.setActivityResultCallback(this);
-  }
-
 
 
   @Override
@@ -250,7 +226,7 @@ public class ShealthPlugin extends CordovaPlugin {
         HealthPermissionManager pmsManager = new HealthPermissionManager(mStore);
         try {
             // Show user permission UI for allowing user to change options
-            pmsManager.requestPermissions(generatePermissionKeySet(), actContext)
+            pmsManager.requestPermissions(generatePermissionKeySet(), (Activity) actContext)
                     .setResultListener(mPermissionListener);
         } catch (Exception e) {
             Log.e(TAG, "Permission setting fails.", e);
@@ -300,17 +276,29 @@ public class ShealthPlugin extends CordovaPlugin {
         return true;  // Returning false will result in a "MethodNotFound" error.
     }
 
-  public JSONArray executeForBackground(Long startTime, Long endTime, final CallbackContext callbackContext) throws JSONException {
-
-
+  public void executeForBackground(Long startTime, Long endTime, final CallbackContext callbackContext) throws JSONException {
       long st = startTime;
       long et = endTime;
-
-      //cordova.getThreadPool().execute( new GetStuff(queryData(st, et, dt), callbackContext));
-      JSONArray jsonArray = mReporter.readStepDailyTrendForBackground(st,et, callbackContext);
-
-
-    return jsonArray;  // Returning false will result in a "MethodNotFound" error.
-
+      mReporter.readStepDailyTrendForBackground(st,et, callbackContext);
 }
+
+  public void initializeForBackground(Context context, Context activity) {
+
+    actContext = activity;
+    appContext = context;
+
+    mCurrentStartTime = StepCountReader.TODAY_START_UTC_TIME;
+    HealthDataService healthDataService = new HealthDataService();
+    try {
+      healthDataService.initialize(actContext);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
+    mStore = new HealthDataStore(actContext, mConnectionListener);
+
+    mStore.connectService();
+    mReporter = new StepCountReader(mStore, actContext);
+
+  }
 }
